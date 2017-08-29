@@ -1,0 +1,92 @@
+---
+title: "C8 project"
+author: "Pu Yang"
+date: "2017Äê8ÔÂ23ÈÕ"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement ¨C a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## What you should submit
+
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+## data processing 
+```{r dataloadiing&cleaning}
+trainingset <- read.csv("pml-training.csv", na.strings=c("NA","#DIV/0!", ""))
+testingset <- read.csv("pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
+
+trainingset<-trainingset[,colSums(is.na(trainingset)) == 0]
+testingset<-testingset[,colSums(is.na(testingset)) == 0]
+trainingset<-trainingset[,-c(1:7)]
+testingset<-testingset[,-c(1:7)]
+```
+
+```{r subset}
+library(caret)
+library(randomForest)
+library(rpart)
+set.seed(1111)
+
+subsamples <- createDataPartition(y=trainingset$classe, p=0.75, list=FALSE)
+subTraining <- trainingset[subsamples, ] 
+subTesting <- trainingset[-subsamples, ]
+```
+
+## Model1: Decision Tree
+
+
+```{r model1}
+model1 <- rpart(classe ~ ., data=subTraining, method="class")
+
+prediction1 <- predict(model1, subTesting, type = "class")
+
+confusionMatrix(prediction1, subTesting$classe)
+
+```
+
+```{r model2}
+model2 <- randomForest(classe ~ ., data=subTraining, method="class")
+
+prediction2 <- predict(model2, subTesting, type = "class")
+
+confusionMatrix(prediction2, subTesting$classe)
+
+```
+
+## Decision
+
+As the results show, Random Forest algorithm performed better than Decision Trees.
+Accuracy for Random Forest model was 0.9959 (95% CI: (0.9937, 0.9975)) compared to 0.7398 (95% CI: (0.7273, 0.752)) for Decision Tree model. 
+
+The random Forest model is choosen. The accuracy of the model is 0.995. The expected out-of-sample error is estimated at 0.005, or 0.5%. 
+
+
+## Reasons for my choices
+
+The outcome ¡°classe¡± is an unordered factor variable. Thus, we can choose our error type as 1-accuracy. The sample size of the Training data set is pretty large, so we can divide our training sample into subtraining and subtesting for cross-validation. Features with all missing values and unrelated features, such as users' information were all removed.
+Decision tree and random forest algorithms are good at detecting the features for classification. 
+
+## References
+[1] Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human ¡¯13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+[2] Krzysztof Gra??bczewski and Norbert Jankowski. Feature Selection with Decision Tree Criterion.
+
